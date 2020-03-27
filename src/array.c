@@ -41,7 +41,7 @@ DEALINGS IN THE SOFTWARE.
 #define array_resize_amt 1.4
 #define array_presize_amt 16
 
-struct gensynArray_t {
+struct gensyn_array_t {
     uint32_t allocSize;
     uint32_t size;
     uint32_t sizeofType;
@@ -49,8 +49,8 @@ struct gensynArray_t {
 };
 
 
-gensynArray_t * gensyn_array_create(uint32_t typesize) {
-    gensynArray_t * a = malloc(sizeof(gensynArray_t));
+gensyn_array_t * gensyn_array_create(uint32_t typesize) {
+    gensyn_array_t * a = malloc(sizeof(gensyn_array_t));
     a->sizeofType = typesize;
     a->size = 0;
     a->allocSize = array_presize_amt;
@@ -58,9 +58,9 @@ gensynArray_t * gensyn_array_create(uint32_t typesize) {
     return a;
 }
 
-void gensyn_array_destroy(gensynArray_t * t) {
+void gensyn_array_destroy(gensyn_array_t * t) {
     #ifdef GENSYNDC_DEBUG
-        assert(t && "gensynArray_t pointer cannot be NULL.");
+        assert(t && "gensyn_array_t pointer cannot be NULL.");
     #endif
     free(t->data);
     free(t);
@@ -68,11 +68,11 @@ void gensyn_array_destroy(gensynArray_t * t) {
 
 
 
-gensynArray_t * gensyn_array_clone(const gensynArray_t * src) {
+gensyn_array_t * gensyn_array_clone(const gensyn_array_t * src) {
     #ifdef GENSYNDC_DEBUG
-        assert(src && "gensynArray_t pointer cannot be NULL.");
+        assert(src && "gensyn_array_t pointer cannot be NULL.");
     #endif
-    gensynArray_t * a = malloc(sizeof(gensynArray_t));
+    gensyn_array_t * a = malloc(sizeof(gensyn_array_t));
 
     // do not clone pre-alloc size
     a->allocSize = src->size;
@@ -83,7 +83,7 @@ gensynArray_t * gensyn_array_clone(const gensynArray_t * src) {
     return a;
 }
 
-uint32_t gensyn_array_lower_bound(const gensynArray_t * t, const void * ptrToEle, int(*comp)(const void * a, const void * b)) {
+uint32_t gensyn_array_lower_bound(const gensyn_array_t * t, const void * ptrToEle, int(*comp)(const void * a, const void * b)) {
     int64_t lo = 0;
     int64_t hi = t->size;
     int64_t mid;
@@ -100,7 +100,7 @@ uint32_t gensyn_array_lower_bound(const gensynArray_t * t, const void * ptrToEle
     return lo;
 }
 
-void gensyn_array_insert_n(gensynArray_t * t, uint32_t index, void * ele, uint32_t count) {
+void gensyn_array_insert_n(gensyn_array_t * t, uint32_t index, void * ele, uint32_t count) {
     gensyn_array_set_size(t, t->size+count);
 
     memmove(
@@ -117,23 +117,23 @@ void gensyn_array_insert_n(gensynArray_t * t, uint32_t index, void * ele, uint32
 }
 
 
-uint32_t gensyn_array_get_size(const gensynArray_t * t) {
+uint32_t gensyn_array_get_size(const gensyn_array_t * t) {
     #ifdef GENSYNDC_DEBUG
-        assert(t && "gensynArray_t pointer cannot be NULL.");
+        assert(t && "gensyn_array_t pointer cannot be NULL.");
     #endif
     return t->size;
 }
 
-uint32_t gensyn_array_get_type_size(const gensynArray_t * t) {
+uint32_t gensyn_array_get_type_size(const gensyn_array_t * t) {
     #ifdef GENSYNDC_DEBUG
-        assert(t && "gensynArray_t pointer cannot be NULL.");
+        assert(t && "gensyn_array_t pointer cannot be NULL.");
     #endif
     return t->sizeofType;
 }
 
-void gensyn_array_push_n(gensynArray_t * t, const void * elements, uint32_t count) {
+void gensyn_array_push_n(gensyn_array_t * t, const void * elements, uint32_t count) {
     #ifdef GENSYNDC_DEBUG
-        assert(t && "gensynArray_t pointer cannot be NULL.");
+        assert(t && "gensyn_array_t pointer cannot be NULL.");
     #endif
     while(t->size + count > t->allocSize) {
         t->allocSize += t->allocSize*array_presize_amt;
@@ -148,9 +148,9 @@ void gensyn_array_push_n(gensynArray_t * t, const void * elements, uint32_t coun
 }
 
 
-void gensyn_array_remove(gensynArray_t * t, uint32_t index) {
+void gensyn_array_remove(gensyn_array_t * t, uint32_t index) {
     #ifdef GENSYNDC_DEBUG
-        assert(t && "gensynArray_t pointer cannot be NULL.");
+        assert(t && "gensyn_array_t pointer cannot be NULL.");
         assert(index < t->size);
     #endif
 
@@ -165,24 +165,24 @@ void gensyn_array_remove(gensynArray_t * t, uint32_t index) {
 
 
 
-void * gensyn_array_get_data(const gensynArray_t * t) {
+void * gensyn_array_get_data(const gensyn_array_t * t) {
     #ifdef GENSYNDC_DEBUG
-        assert(t && "gensynArray_t pointer cannot be NULL.");
+        assert(t && "gensyn_array_t pointer cannot be NULL.");
     #endif
     return t->data;
 }
 
 
-void gensyn_array_clear(gensynArray_t * t) {
+void gensyn_array_clear(gensyn_array_t * t) {
     #ifdef GENSYNDC_DEBUG
-        assert(t && "gensynArray_t pointer cannot be NULL.");
+        assert(t && "gensyn_array_t pointer cannot be NULL.");
     #endif
     t->size = 0;
 }
 
-void gensyn_array_set_size(gensynArray_t * t, uint32_t size) {
+void gensyn_array_set_size(gensyn_array_t * t, uint32_t size) {
     #ifdef GENSYNDC_DEBUG
-        assert(t && "gensynArray_t pointer cannot be NULL.");
+        assert(t && "gensyn_array_t pointer cannot be NULL.");
     #endif
     while(size > t->allocSize) {
         t->allocSize += t->allocSize*array_presize_amt;

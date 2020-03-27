@@ -151,7 +151,7 @@ static int key_cmp_fn_c_str(const void * a, const void * b, uint32_t len) {
 
 
 static uint32_t hash_fn_gensyn_str(uint8_t * src, uint32_t len) {
-    gensynString_t * str = (void*)src;
+    gensyn_string_t * str = (void*)src;
     uint8_t * data = gensyn_string_get_byte_data(str);
     len = gensyn_string_get_byte_length(str);
 
@@ -456,12 +456,12 @@ int gensyn_table_entry_exists(const gensyn_table_t * t, const void * key) {
         if (src->hash   == hash && 
             src->keyLen == keyLen) { // hash must equal before key does, so 
             if (t->keyCmp(key, src->key, src->keyLen)) {
-                return TRUE;
+                return 1;
             }
         }
         src = src->next;
     }    
-    return FALSE;
+    return 0;
 }
 
 
@@ -583,7 +583,7 @@ void gensyn_table_iter_proceed(gensyn_table_iter_t * t) {
     }
 
     t->current = NULL;
-    t->isEnd = TRUE;
+    t->isEnd = 1;
 }
 
 int gensyn_table_iter_is_end(const gensyn_table_iter_t * t) {

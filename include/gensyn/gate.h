@@ -1,7 +1,10 @@
 #ifndef H_GENSYN_GATE__INCLUDED
 #define H_GENSYN_GATE__INCLUDED
 
-
+#include <gensyn/sample.h>
+#include <gensyn/string.h>
+#include <gensyn/array.h>
+typedef struct gensyn_t gensyn_t;
 /*
     GenSyn: Gate 
     
@@ -66,10 +69,10 @@ typedef enum {
 
 
 typedef enum {
-    GENSYN_GATE__PROPERTY_END,
-    GENSYN_GATE__PROPERTY_IN,
-    GENSYN_GATE__PROPERTY_OUT,
-    GENSYN_GATE__PROPERTY_PARAM,
+    GENSYN_GATE__PROPERTY__END,
+    GENSYN_GATE__PROPERTY__IN,
+    GENSYN_GATE__PROPERTY__OUT,
+    GENSYN_GATE__PROPERTY__PARAM,
 
 } gensyn_gate__property_e;
 
@@ -100,7 +103,7 @@ typedef enum {
 int gensyn_gate_register(
     
     const gensyn_string_t *     name,
-    int 
+
     gensyn_gate__create_fn      onCreate,
     gensyn_gate__update_fn      onUpdate,
     gensyn_gate__remove_fn      onRemove,
@@ -161,7 +164,7 @@ void gensyn_gate_set_out(
 
 
 // Returns the value of a parameter
-float gensyn_gate_get_parameter(gensyn_gate_t *, const gensyn_string_t *);
+float gensyn_gate_get_parameter(const gensyn_gate_t *, const gensyn_string_t *);
 
 // Sets the value of a parameter
 void gensyn_gate_set_parameter(gensyn_gate_t *, const gensyn_string_t *, float);
@@ -170,17 +173,17 @@ void gensyn_gate_set_parameter(gensyn_gate_t *, const gensyn_string_t *, float);
 
 // Gets an IN gate for the given registered IN.
 // If none exists, NULL is returned.
-gensyn_gate_t * gensyn_gate_get_in(gensyn_gate_t *, const gensyn_string_t *);
+gensyn_gate_t * gensyn_gate_get_in(const gensyn_gate_t *, const gensyn_string_t *);
 
 // Gets an OUT gate for the given registered OUT.
 // If none exists, NULL is returned.
-gensyn_gate_t * gensyn_gate_get_out(gensyn_gate_t *, const gensyn_string_t *);
+gensyn_gate_t * gensyn_gate_get_out(const gensyn_gate_t *, const gensyn_string_t *);
 
 
 
-const gensyn_array_t * gensyn_gate_get_in_names(gensyn_gate_t *);
+const gensyn_array_t * gensyn_gate_get_in_names(const gensyn_gate_t *);
 
-const gensyn_array_t * gensyn_gate_get_out_names(gensyn_gate_t *);
+const gensyn_array_t * gensyn_gate_get_out_names(const gensyn_gate_t *);
 
 
 
