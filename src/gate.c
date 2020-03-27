@@ -2,6 +2,7 @@
 #include <gensyn/table.h>
 #include <stdarg.h>
 #include <stdlib.h>
+#include <string.h>
 // In the interest of speed and simplicity, we'll
 // ise a fixed maximum of INs/OUTs
 #define MAX_CX 8
@@ -22,6 +23,9 @@ struct gensyn_gate_t {
     int nins;
     int nouts;    
     int nparams;
+    int texture;
+    int x;
+    int y;
     float params[MAX_PARAM];
 
     gensyn_gate_t * inrefs [MAX_CX];
@@ -31,6 +35,13 @@ struct gensyn_gate_t {
     gensyn_array_t * innamesArr;
     gensyn_array_t * outnamesArr;
     gensyn_array_t * paramnamesArr;
+
+    gensyn_string_t * desc;
+
+
+    gensyn_sample_t * sampleBuffer;
+    uint32_t sampleBufferSize;
+    uint32_t updateID;
 };
 
 
@@ -46,7 +57,8 @@ static gensyn_gate_t * gensyn_gate_clone(const gensyn_gate_t *);
 int gensyn_gate_register(
     
     const gensyn_string_t *     name,
-    
+    const gensyn_string_t *     desc,
+    int                         texID,
     gensyn_gate__create_fn      onCreate,
     gensyn_gate__update_fn      onUpdate,
     gensyn_gate__remove_fn      onRemove,
@@ -71,9 +83,9 @@ int gensyn_gate_register(
     g->onCreate = onCreate;
     g->onUpdate = onUpdate;
     g->onRemove = onRemove;
+    g->desc = gensyn_string_clone(desc);
+    g->texture = texID;
     
-
-
 
     int i;
     gensyn_string_t * entry;
@@ -162,13 +174,14 @@ gensyn_gate_t * gensyn_gate_create(gensyn_t * ctx, const gensyn_string_t * str) 
 
     gensyn_gate_t * out = gensyn_gate_clone(prefab);
     out->context = ctx;
+    out->onCreate(out);
     return out;
 }
 
 
 void gensyn_gate_destroy(gensyn_gate_t * g) {
     int i, n;
-
+    g->onRemove(g);
 
     for(i = 0; i < g->nins; ++i) {
         if (g->inrefs[i]) {
@@ -191,6 +204,73 @@ void gensyn_gate_destroy(gensyn_gate_t * g) {
         }
     }
     free(g);
+}
+
+
+static uint32_t updatePool = 0xff;
+
+void gensyn_gate_run__internal(
+    gensyn_gate_t * g, 
+    uint32_t sampleCount,
+    float sampleRate,
+    uint32_t updateID
+) {
+    int i;
+    gensyn_sample_t * inBuffers[g->nins];
+
+
+    // circular dependency! abort
+    if (g->updateID == updateID) {
+        return;
+    }
+    g->updateID = updateID;
+
+    // make sure internal buffer can handle it.
+    if (g->sampleBufferSize <= sampleCount) {
+        free(g->sampleBuffer);
+        g->sampleBuffer = calloc(sampleCount, sizeof(gensyn_sample_t));
+        g->sampleBufferSize = sampleCount;
+    }  
+
+
+    // always make sure dependencies are satisfied first.
+    for(i = 0; i < g->nins; ++i) {
+        gensyn_gate_run__internal(
+            g->inrefs[i],
+            sampleCount,
+            sampleRate,
+            updateID
+        );
+        inBuffers[i] = g->inrefs[i]->sampleBuffer;
+    }
+
+    // update local buffer
+    g->onUpdate(
+        g,
+        g->nins,
+        inBuffers,
+        g->sampleBuffer,
+        sampleCount,
+        sampleRate
+    );
+}
+
+
+void gensyn_gate_run(
+    gensyn_gate_t * g, 
+    gensyn_sample_t * samplesOut, 
+    uint32_t sampleCount,
+    float sampleRate
+) {
+    gensyn_gate_run__internal(    
+        g,
+        sampleCount,
+        sampleRate,
+        ++updatePool
+    );
+
+    // write the final results
+    memcpy(samplesOut, g->sampleBuffer, sampleCount*sizeof(gensyn_sample_t));
 }
 
 
@@ -323,6 +403,26 @@ gensyn_gate__type_e gensyn_gate_get_type(const gensyn_gate_t * g) {
 }
 
 
+const gensyn_string_t * gensyn_gate_get_description(const gensyn_gate_t * g) {
+    return g->desc;
+}
+
+
+int gensyn_gate_get_x(const gensyn_gate_t * g) {
+    return g->x;
+}
+
+int gensyn_gate_get_y(const gensyn_gate_t * g) {
+    return g->y;
+}
+
+void gensyn_gate_set_x(gensyn_gate_t * g, int x) {
+    g->x = x;
+}
+void gensyn_gate_set_y(gensyn_gate_t * g, int y) {
+    g->y = y;
+}
+
 
 //////// statics 
 
@@ -330,7 +430,7 @@ gensyn_gate__type_e gensyn_gate_get_type(const gensyn_gate_t * g) {
 gensyn_gate_t * gensyn_gate_clone(const gensyn_gate_t * src) {
     gensyn_gate_t * g = malloc(sizeof(gensyn_gate_t));
     // since the arrays for names are readonly and all refs are started at 0 anyway,
-    // it should be, for once, save to do a shallow copy.
+    // it should be, for once, safe to do a shallow copy.
     *g = *src;
 
     return g;

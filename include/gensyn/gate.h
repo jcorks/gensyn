@@ -33,10 +33,32 @@ typedef void (*gensyn_gate__create_fn)(gensyn_gate_t *);
 // Called when the gate is updated. This 
 // is done on the same thread as the create and remove functions.
 // Update happens before delivering data to the out gates.
-typedef void (*gensyn_gate__update_fn)(
+typedef int (*gensyn_gate__update_fn)(
     gensyn_gate_t *, 
-    gensyn_sample_t *, 
+
+    // number of input buffers to be received.
+    int nIn,
+    
+    // input buffers from in gates, each buffer of 
+    // size sampleCount and attuned to the given sampleRate.
+    // In the interest of speed, the order of each sample buffer
+    // buffer matches the order they were defined in the original 
+    // definition. Since in the usual case the team who is 
+    // designing a gate will also provide its definition, this 
+    // requirement should be reasonable.
+    gensyn_sample_t ** inSampleBuffers, 
+
+    // THe buffer to write results to. If the sampleCount has 
+    // not changes since previous frame, the buffer should contain 
+    // what was computed last iteration. If not, the buffer will be 
+    // empty.
+    gensyn_sample_t * buffer,
+
+
+    // number of samples in each buffer
     uint32_t sampleCount,
+
+    // The sample rate in Hz.
     float sampleRate
 );
 
@@ -76,6 +98,8 @@ typedef enum {
 
 } gensyn_gate__property_e;
 
+
+
 // Registers a new type of gate that can be instantiated by name 
 // using gensyn_gate_create.
 // name:        the name of the gate.
@@ -103,10 +127,14 @@ typedef enum {
 int gensyn_gate_register(
     
     const gensyn_string_t *     name,
+    const gensyn_string_t *     description,
+    int                         textureID,
+
 
     gensyn_gate__create_fn      onCreate,
     gensyn_gate__update_fn      onUpdate,
     gensyn_gate__remove_fn      onRemove,
+
     
     ...
 );
@@ -120,7 +148,6 @@ gensyn_gate_t *  gensyn_gate_create(gensyn_t *, const gensyn_string_t *);
 
 // Destroys a gate. 
 void gensyn_gate_destroy(gensyn_gate_t *);
-
 
 
 
@@ -143,6 +170,21 @@ void gensyn_gate_run(
 );
 
 
+
+
+
+
+// Returns a string description for the gate.
+const gensyn_string_t * gensyn_gate_get_description(const gensyn_gate_t *);
+
+// Gets the X/Y of the gensyn gate. This is for visual purposes.
+int gensyn_gate_get_x(const gensyn_gate_t *);
+int gensyn_gate_get_y(const gensyn_gate_t *);
+
+
+// Sets the X/Y of the gate. This is for visual purposes.
+void gensyn_gate_set_x(gensyn_gate_t *, int);
+void gensyn_gate_set_y(gensyn_gate_t *, int);
 
 // Sets the IN gate for the name.
 void gensyn_gate_set_in(
