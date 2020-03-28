@@ -92,8 +92,7 @@ typedef enum {
 
 typedef enum {
     GENSYN_GATE__PROPERTY__END,
-    GENSYN_GATE__PROPERTY__IN,
-    GENSYN_GATE__PROPERTY__OUT,
+    GENSYN_GATE__PROPERTY__CONNECTION,
     GENSYN_GATE__PROPERTY__PARAM,
 
 } gensyn_gate__property_e;
@@ -117,16 +116,15 @@ typedef enum {
 // The first string denotes what type of parameter it is
 // Is is allowed to by the following:
 //
-//  GENSYN_GATE__PROPERTY_IN        Denotes the next string to be the name of an IN.
-//  GENSYN_GATE__PROPERTY_OUT       Denotes the next string to be the name of an OUT
-//  GENSYN_GATE__PROPERTY_PARAM     Denotes the next string to be the name of an parameter. Then it shall be followed by a double as a default value
+//  GENSYN_GATE__PROPERTY_CONNECTION Denotes the next string to be the name of a gate slot as input to this gate.
+//  GENSYN_GATE__PROPERTY_PARAM      Denotes the next string to be the name of an parameter. Then it shall be followed by a double as a default value
 //
 //
 // If the registration is successful, 1 is returned. Otherwise, 0 is returned 
 // and the gate is not registered. 
 int gensyn_gate_register(
     
-    const gensyn_string_t *     name,
+    const gensyn_string_t *     nameClass,
     const gensyn_string_t *     description,
     int                         textureID,
 
@@ -186,24 +184,46 @@ int gensyn_gate_get_y(const gensyn_gate_t *);
 void gensyn_gate_set_x(gensyn_gate_t *, int);
 void gensyn_gate_set_y(gensyn_gate_t *, int);
 
-// Sets the IN gate for the name.
-void gensyn_gate_set_in(
-    gensyn_gate_t *, 
-    const gensyn_string_t * name, 
-    gensyn_gate_t *
+// Connects a source gate to a destination gate. The first argument acts as the OUT, and the last 
+// argument acts as the IN 
+void gensyn_gate_connect(
+    gensyn_gate_t * from, 
+    const gensyn_string_t * inConnection, 
+    gensyn_gate_t * to
+);
+
+// Removes a connection from the out gate and in gate
+void gensyn_gate_disconnect(
+    gensyn_gate_t * from,
+    const gensyn_string_t * inConnection, 
+    gensyn_gate_t * to    
 );
 
 
-// Sets the OUT gate for the name.
-void gensyn_gate_set_out(
-    gensyn_gate_t *, 
-    const gensyn_string_t * name, 
-    gensyn_gate_t *
-);
+
+// Gets an IN gate for the given registered IN.
+// If none exists, NULL is returned.
+gensyn_gate_t * gensyn_gate_get_in_connection(const gensyn_gate_t *, const gensyn_string_t *);
+
+// Gets an OUT gate for the given registered OUT.
+// If none exists, NULL is returned.
+gensyn_gate_t * gensyn_gate_get_out_connection(const gensyn_gate_t *, int index);
+
+
+// Gets all the string names available to connect to this gate.
+const gensyn_array_t * gensyn_gate_get_in_names(const gensyn_gate_t *);
+
+// Gets the number of active connections that this 
+// gate is delivering data to.
+int gensyn_gate_get_out_connection_count(const gensyn_gate_t *);
 
 
 
 
+
+
+// Gets all the string names available for parameters
+const gensyn_array_t * gensyn_gate_get_param_names(const gensyn_gate_t *);
 
 // Returns the value of a parameter
 float gensyn_gate_get_parameter(const gensyn_gate_t *, const gensyn_string_t *);
@@ -213,25 +233,16 @@ void gensyn_gate_set_parameter(gensyn_gate_t *, const gensyn_string_t *, float);
 
 
 
-// Gets an IN gate for the given registered IN.
-// If none exists, NULL is returned.
-gensyn_gate_t * gensyn_gate_get_in(const gensyn_gate_t *, const gensyn_string_t *);
 
-// Gets an OUT gate for the given registered OUT.
-// If none exists, NULL is returned.
-gensyn_gate_t * gensyn_gate_get_out(const gensyn_gate_t *, const gensyn_string_t *);
-
-
-
-const gensyn_array_t * gensyn_gate_get_in_names(const gensyn_gate_t *);
-
-const gensyn_array_t * gensyn_gate_get_out_names(const gensyn_gate_t *);
 
 
 
 // Returns what type of gate this is.
 // This is based on the ins and outs specified during registration.
 gensyn_gate__type_e gensyn_gate_get_type(const gensyn_gate_t *);
+
+// returns the class of gate
+const gensyn_string_t * gensyn_gate_get_class(const gensyn_gate_t *);
 
 
 

@@ -1,4 +1,4 @@
-#include <gensyn/extern/srgs.h>
+#include "srgs.h"
 
 
 #include <string.h>

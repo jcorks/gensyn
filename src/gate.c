@@ -15,7 +15,7 @@
 // gate nor in querying for the gate.
 struct gensyn_gate_t {
     gensyn_t * context;
-    
+    gensyn_string_t * type;
     gensyn_gate__create_fn onCreate;
     gensyn_gate__update_fn onUpdate;
     gensyn_gate__remove_fn onRemove;
@@ -33,7 +33,6 @@ struct gensyn_gate_t {
 
     
     gensyn_array_t * innamesArr;
-    gensyn_array_t * outnamesArr;
     gensyn_array_t * paramnamesArr;
 
     gensyn_string_t * desc;
@@ -85,14 +84,17 @@ int gensyn_gate_register(
     g->onRemove = onRemove;
     g->desc = gensyn_string_clone(desc);
     g->texture = texID;
+    g->type = gensyn_string_clone(name);
+    g->innamesArr = gensyn_array_create(sizeof(gensyn_string_t*));
+    g->paramnamesArr = gensyn_array_create(sizeof(gensyn_string_t*));
     
-
+    
     int i;
     gensyn_string_t * entry;
     float dfparam;
 L_START:
     switch(va_arg(args, gensyn_gate__property_e)) {
-      case GENSYN_GATE__PROPERTY__IN:
+      case GENSYN_GATE__PROPERTY__CONNECTION:
         entry = va_arg(args, gensyn_string_t*);
         
         // max reached. error in registration
@@ -113,26 +115,6 @@ L_START:
         g->nins++;
         break;
             
-      case GENSYN_GATE__PROPERTY__OUT:
-        entry = va_arg(args, gensyn_string_t*);
-        
-        // max reached. error in registration
-        if (g->nouts >= MAX_CX) {
-            gensyn_gate_destroy(g);
-            return 0;                            
-        }
-
-        // already exists with this name. Error in registration
-        for(i = 0; i < g->nouts; ++i) {
-            if (gensyn_string_test_eq(gensyn_array_at(g->outnamesArr, gensyn_string_t *, i), entry)) {
-                gensyn_gate_destroy(g);
-                return 0;                                            
-            }
-        }            
-        entry = gensyn_string_clone(entry);
-        gensyn_array_push(g->outnamesArr, entry);
-        g->nouts++;
-        break;
 
       case GENSYN_GATE__PROPERTY__PARAM:
         entry = va_arg(args, gensyn_string_t*);
@@ -277,55 +259,55 @@ void gensyn_gate_run(
 
 
 // Sets the IN gate for the name.
-void gensyn_gate_set_in(
-    gensyn_gate_t * g, 
+void gensyn_gate_connect(
+    gensyn_gate_t * from, 
     const gensyn_string_t * name, 
-    gensyn_gate_t * next
+    gensyn_gate_t * to
 ) {
     int i;
-    for(i = 0; i < g->nins; ++i) {
-        if (gensyn_string_test_eq(gensyn_array_at(g->innamesArr, gensyn_string_t *, i), name)) {
-            if (g->inrefs[i] != NULL) { // remove old ref from tree
-                gensyn_gate_t * oldRef = g->inrefs[i];
+    // max connections reached. 
+    if (from && from->nouts >= MAX_CX) {
+        return;
+    }
+
+    for(i = 0; i < to->nins; ++i) {
+        if (gensyn_string_test_eq(gensyn_array_at(to->innamesArr, gensyn_string_t *, i), name)) {
+            
+            if (to->inrefs[i] != NULL) { // remove old ref from tree
+                gensyn_gate_t * oldRef = to->inrefs[i];
                 int n;
                 for(n = 0; n < oldRef->nouts; ++n) {
-                    if (oldRef->outrefs[n] == g) {
+                    if (oldRef->outrefs[n] == to) {
                         oldRef->outrefs[n] = NULL;
+                        oldRef->nouts--;
+
+                        // fill gap
+                        for(; n < oldRef->nouts; ++n) {
+                            oldRef->outrefs[n] = oldRef->outrefs[n+1]; 
+                        }
                         break;
                     }
                 }
             }
-            g->inrefs[i] = next;
+            if (from) {
+                from->outrefs[from->nouts++] = to;
+            }
+            to->inrefs[i] = from;
             return;
         }
     }
 }
 
 
-// Sets the OUT gate for the name.
-void gensyn_gate_set_out(
-    gensyn_gate_t * g, 
+void gensyn_gate_disconnect(
+    gensyn_gate_t * from, 
     const gensyn_string_t * name, 
-    gensyn_gate_t * next
+    gensyn_gate_t * to
 ) {
-    int i;
-    for(i = 0; i < g->nouts; ++i) {
-        if (gensyn_string_test_eq(gensyn_array_at(g->outnamesArr, gensyn_string_t *, i), name)) {
-            if (g->outrefs[i] != NULL) { // remove old ref from tree
-                gensyn_gate_t * oldRef = g->outrefs[i];
-                int n;
-                for(n = 0; n < oldRef->nins; ++n) {
-                    if (oldRef->inrefs[n] == g) {
-                        oldRef->inrefs[n] = NULL;
-                        break;
-                    }
-                }
-            }
-            g->outrefs[i] = next;
-            return;
-        }
-    }
+    gensyn_gate_connect(NULL, name, to);
 }
+
+
 
 
 
@@ -357,7 +339,7 @@ void gensyn_gate_set_parameter(gensyn_gate_t * g, const gensyn_string_t * name, 
 
 // Gets an IN gate for the given registered IN.
 // If none exists, NULL is returned.
-gensyn_gate_t * gensyn_gate_get_in(const gensyn_gate_t * g, const gensyn_string_t * name) {
+gensyn_gate_t * gensyn_gate_get_in_connection(const gensyn_gate_t * g, const gensyn_string_t * name) {
     int i;
     for(i = 0; i < g->nparams; ++i) {
         if (gensyn_string_test_eq(gensyn_array_at(g->innamesArr, gensyn_string_t *, i), name)) {
@@ -369,14 +351,8 @@ gensyn_gate_t * gensyn_gate_get_in(const gensyn_gate_t * g, const gensyn_string_
 
 // Gets an OUT gate for the given registered OUT.
 // If none exists, NULL is returned.
-gensyn_gate_t * gensyn_gate_get_out(const gensyn_gate_t * g, const gensyn_string_t * name) {
-    int i;
-    for(i = 0; i < g->nparams; ++i) {
-        if (gensyn_string_test_eq(gensyn_array_at(g->outnamesArr, gensyn_string_t *, i), name)) {
-            return g->outrefs[i];
-        }
-    }
-    return NULL;    
+gensyn_gate_t * gensyn_gate_get_out_connection(const gensyn_gate_t * g, int index) {
+    return g->outrefs[index];
 }
 
 
@@ -384,8 +360,13 @@ const gensyn_array_t * gensyn_gate_get_in_names(const gensyn_gate_t * g) {
     return g->innamesArr;
 }
 
-const gensyn_array_t * gensyn_gate_get_out_names(const gensyn_gate_t * g) {
-    return g->outnamesArr;
+const gensyn_array_t * gensyn_gate_get_param_names(const gensyn_gate_t * g) {
+    return g->paramnamesArr;
+}
+
+
+int gensyn_gate_get_out_connection_count(const gensyn_gate_t * g) {
+    return g->nouts;
 }
 
 
@@ -405,6 +386,10 @@ gensyn_gate__type_e gensyn_gate_get_type(const gensyn_gate_t * g) {
 
 const gensyn_string_t * gensyn_gate_get_description(const gensyn_gate_t * g) {
     return g->desc;
+}
+
+const gensyn_string_t * gensyn_gate_get_class(const gensyn_gate_t * g) {
+    return g->type;
 }
 
 
