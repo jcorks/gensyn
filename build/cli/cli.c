@@ -31,8 +31,10 @@ static void write_output_pcm(gensyn_t * g, const char * output) {
         return;
     }
     
-    uint16_t * buffer = calloc(BUFFERSIZE, sizeof(uint16_t));
-    uint32_t i;
+    float    * buffer     = calloc(BUFFERSIZE, sizeof(float));
+    int16_t  * bufferReal = calloc(BUFFERSIZE, sizeof(int16_t));
+
+    uint32_t i, n;
     for(i = 0; i < SAMPLERATE * DURATION_SEC; i+=BUFFERSIZE) {
         gensyn_gate_run(
             gensyn_get_output_gate(g),
@@ -40,9 +42,16 @@ static void write_output_pcm(gensyn_t * g, const char * output) {
             BUFFERSIZE,
             SAMPLERATE
         );
-        fwrite(buffer, BUFFERSIZE, sizeof(uint16_t), f);
+        
+        for(n = 0; n < BUFFERSIZE; ++n) {
+            bufferReal[n] = (buffer[n] * (INT16_MAX - INT16_MIN)) + INT16_MIN;
+        }
+        fwrite(bufferReal, BUFFERSIZE, sizeof(int16_t), f);
+        
     }
     free(buffer);
+    free(bufferReal);
+
     fclose(f);
     printf("Wrote waveform to %s\n", output);
 }
@@ -68,7 +77,17 @@ int main() {
             "var testSynth = function() {\n"
             "   var input = gensyn.gate.add('Simple_Input', 'TestInput');\n"
             "   var wave  = gensyn.gate.add('Sine_Wave', 'TestWave');\n"
-            "   input.connectTo('pitch', wave);\n"
+            "   var osc   = gensyn.gate.add('Simple_LFO', 'TestLFO');\n"
+            "   var adder = gensyn.gate.add('Adder', 'TestAdder');\n"
+            
+            "   input.setParam('value', .05372362482610995);\n"
+            "   osc.setParam('max', 0.001);\n"
+            "   osc.setParam('hz', 4);\n"
+            
+            "   osc.connectTo('input0', adder);\n"
+            "   input.connectTo('input1', adder);\n"
+
+            "   adder.connectTo('pitch', wave);\n"
             "   wave.connectTo('waveform', gensyn.getOutput());\n"
             "}"
 

@@ -41,6 +41,7 @@ struct gensyn_gate_t {
     gensyn_sample_t * sampleBuffer;
     uint32_t sampleBufferSize;
     uint32_t updateID;
+    uint64_t sampleTick;
 };
 
 
@@ -149,6 +150,12 @@ L_END:
 }
 
 
+uint64_t gensyn_gate_get_sample_tick(const gensyn_gate_t * g) {
+    return g->sampleTick;
+}
+
+
+
 
 gensyn_gate_t * gensyn_gate_create(gensyn_t * ctx, const gensyn_string_t * str) {
     gensyn_gate_t * prefab = gensyn_table_find(prefabs, str);
@@ -239,6 +246,7 @@ void gensyn_gate_run__internal(
         sampleCount,
         sampleRate
     );
+    g->sampleTick += sampleCount;
 }
 
 

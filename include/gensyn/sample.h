@@ -10,7 +10,7 @@
 
 #define gensyn_sample_min 0.f
 #define gensyn_sample_max 1.f
-typedef uint16_t gensyn_sample_t;
+typedef float gensyn_sample_t;
 
 
 // C0

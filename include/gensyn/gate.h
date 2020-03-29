@@ -168,6 +168,9 @@ void gensyn_gate_run(
 );
 
 
+// Returns how many samples have been processed by the gate.
+uint64_t gensyn_gate_get_sample_tick(const gensyn_gate_t *);
+
 
 
 
@@ -230,7 +233,6 @@ float gensyn_gate_get_parameter(const gensyn_gate_t *, const gensyn_string_t *);
 
 // Sets the value of a parameter
 void gensyn_gate_set_parameter(gensyn_gate_t *, const gensyn_string_t *, float);
-
 
 
 

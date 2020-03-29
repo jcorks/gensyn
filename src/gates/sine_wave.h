@@ -16,10 +16,12 @@ static int sine_wave__on_update(
 
     gensyn_sample_t * pitch = inSampleBuffers[0];
     gensyn_sample_t * phase = inSampleBuffers[1];
+    gensyn_sample_t * velocity = inSampleBuffers[2];
     
     uint32_t i;
+    uint64_t sampleOffset = gensyn_gate_get_sample_tick(gate);
     
-    
+    printf("@ %f\n", gensyn_pitch_sample_to_hz(pitch[0]));
     
     if (pitch && phase){
         for(i = 0; i < sampleCount; ++i) {
@@ -28,29 +30,35 @@ static int sine_wave__on_update(
 
                     phase[i] + // offset in seconds
                     
-                    (gensyn_pitch_sample_to_hz(i)) * // 1.0 cycle -> number of cycles per second,
+                    (gensyn_pitch_sample_to_hz(pitch[i])) * // 1.0 cycle -> number of cycles per second,
                     
-                    (i / sampleRate)  // progress of the cycle
+                    ((i+sampleOffset) / sampleRate)  // progress of the cycle
                 )
                 
-            );
+            )*.5 + .5;
         }
     } else if (pitch) {
         for(i = 0; i < sampleCount; ++i) {
             buffer[i] = sin(
                 2 * M_PI * (// rads -> 1.0 per cycle
                     
-                    (gensyn_pitch_sample_to_hz(i)) * // 1.0 cycle -> number of cycles per second,
+                    (gensyn_pitch_sample_to_hz(pitch[i])) * // 1.0 cycle -> number of cycles per second,
                     
-                    (i / sampleRate)  // progress of the cycle
+                    ((i+sampleOffset) / sampleRate)  // progress of the cycle
                 )
                 
-            );
+            )*.5 + .5;
         }
         
         
     } else 
         return 0;
+    
+    if (velocity) {
+        for(i = 0; i < sampleCount; ++i) {
+            buffer[i]*=velocity[i];
+        }
+    }
     return 1;
 }
 
@@ -71,6 +79,7 @@ void gensyn_gate_add__sine_wave() {
         
         
         GENSYN_GATE__PROPERTY__CONNECTION, GENSYN_STR_CAST("pitch"),
+        GENSYN_GATE__PROPERTY__CONNECTION, GENSYN_STR_CAST("velocity"),
         GENSYN_GATE__PROPERTY__CONNECTION, GENSYN_STR_CAST("phase"),
 
 

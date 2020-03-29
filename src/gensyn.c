@@ -12,8 +12,10 @@
 #include "gates/output.h"
 #include "gates/sine_wave.h"
 #include "gates/simple_input.h"
+#include "gates/adder.h"
+#include "gates/lfo.h"
 ///////
-
+ 
 struct gensyn_t {
     gensyn_gate_t * output;
 
@@ -104,7 +106,7 @@ const char * initialjs =
 
 
 
-
+ 
 // native function called by the ecma context
 static duk_ret_t gensyn_ecma_c_native(duk_context * ctx);
 
@@ -183,8 +185,8 @@ gensyn_t * gensyn_create() {
     gensyn_table_insert(out->fnCmd, GENSYN_STR_CAST("gate-summary"),   gensyn_command__gate_summary);
     gensyn_table_insert(out->fnCmd, GENSYN_STR_CAST("gate-connect"),   gensyn_command__gate_connect);
     gensyn_table_insert(out->fnCmd, GENSYN_STR_CAST("gate-disconnect"),gensyn_command__gate_disconnect);
-    gensyn_table_insert(out->fnCmd, GENSYN_STR_CAST("gate-get_param"), gensyn_command__gate_get_param);
-    gensyn_table_insert(out->fnCmd, GENSYN_STR_CAST("gate-set_param"), gensyn_command__gate_set_param);
+    gensyn_table_insert(out->fnCmd, GENSYN_STR_CAST("gate-get-param"), gensyn_command__gate_get_param);
+    gensyn_table_insert(out->fnCmd, GENSYN_STR_CAST("gate-set-param"), gensyn_command__gate_set_param);
 
     
     
@@ -232,7 +234,7 @@ const gensyn_string_t * gensyn_send_command(const gensyn_t * g, const gensyn_str
     
     return g->result;
 }
-
+ 
 gensyn_gate_t * gensyn_create_named_gate(
     gensyn_t * g, 
     const gensyn_string_t * type,
@@ -297,7 +299,8 @@ void register_gate_types() {
     gensyn_gate_add__gensyn_output();
     gensyn_gate_add__sine_wave();
     gensyn_gate_add__simple_input();
-    
+    gensyn_gate_add__lfo();
+    gensyn_gate_add__adder();
 }
 
 
