@@ -217,13 +217,17 @@ void gensyn_gate_run__internal(
 
     // always make sure dependencies are satisfied first.
     for(i = 0; i < g->nins; ++i) {
-        gensyn_gate_run__internal(
-            g->inrefs[i],
-            sampleCount,
-            sampleRate,
-            updateID
-        );
-        inBuffers[i] = g->inrefs[i]->sampleBuffer;
+        if (g->inrefs[i]) {
+            gensyn_gate_run__internal(
+                g->inrefs[i],
+                sampleCount,
+                sampleRate,
+                updateID
+            );
+            inBuffers[i] = g->inrefs[i]->sampleBuffer;
+        } else {
+            inBuffers[i] = NULL;
+        }
     }
 
     // update local buffer
@@ -341,7 +345,7 @@ void gensyn_gate_set_parameter(gensyn_gate_t * g, const gensyn_string_t * name, 
 // If none exists, NULL is returned.
 gensyn_gate_t * gensyn_gate_get_in_connection(const gensyn_gate_t * g, const gensyn_string_t * name) {
     int i;
-    for(i = 0; i < g->nparams; ++i) {
+    for(i = 0; i < g->nins; ++i) {
         if (gensyn_string_test_eq(gensyn_array_at(g->innamesArr, gensyn_string_t *, i), name)) {
             return g->inrefs[i];
         }

@@ -1,6 +1,7 @@
 #include <gensyn/gensyn.h>
 #include <gensyn/gate.h>
 #include <gensyn/table.h>
+#include <gensyn/sample.h>
 
 #include "extern/duktape.h"
 #include "extern/srgs.h"
@@ -9,7 +10,8 @@
 
 ///////
 #include "gates/output.h"
-
+#include "gates/sine_wave.h"
+#include "gates/simple_input.h"
 ///////
 
 struct gensyn_t {
@@ -37,6 +39,67 @@ static void register_gate_types();
 
 
 
+const char * initialjs = 
+"gensyn = (function() {\n"
+"    return {\n"
+"        'gate' : {\n"
+             // creates a new gate object
+"            'add' : function(gateType, gateName) {\n"
+"                if (gateType == '' || gateName == '') throw new Error('Neither type nor name may be NULL.');\n"
+"                var result = __gensyn_c_native('gate-add', gateType, gateName);\n"
+"                if (result != '') throw new Error(result);\n"
+"                return this.get(gateName);\n"
+"            },\n"
+             // gets an object referring to a real gate
+"            'get' : function(gateName) {\n"
+"                if (__gensyn_c_native('gate-check', gateName) != '') {\n"
+"                    throw new Error(gateName + ' does not refer to a gate!');\n"
+"                }\n"                
+"                return {\n"
+"                    'name' : gateName,\n"
+"                    'remove' : function() {\n"
+"                        __gensyn_c_native('gate-remove', gateName);\n"
+"                    },\n"
+"                    'summary' : function() {\n"
+"                        return __gensyn_c_native('gate-summary', gateName);\n"
+"                    },\n"
+"                    'connectTo' : function(otherConnection, otherGateObject) {\n"
+"                        var result = __gensyn_c_native('gate-connect', gateName, otherConnection, otherGateObject.name);\n"
+"                        if (result != '') {\n"
+"                            throw new Error(result);\n"
+"                        }\n"
+"                    },\n"
+"                    'setParam' : function(paramName, value) {\n"
+"                        __gensyn_c_native('gate-set-param', gateName, paramName, value);\n"
+"                    },\n"
+"                    'getParam' : function(paramName) {\n"
+"                        return Number.parse(__gensyn_c_native('gate-get-param', gateName, paramName));\n"
+"                    },\n"
+"                }\n"
+"            },\n"
+            // returns an array of all the names of gates
+"            'list' : function() {\n"
+"                var listRaw = __gensyn_c_native('gate-list');\n"
+"                return listRaw.split('\\n');\n"
+"            }\n"
+"        },\n"
+        // reduces the state of all gates into a JSON object.
+"        saveState : function() {\n"
+"            throw new Error('Havent implemented this yet');\n"
+"        },\n"
+        // Loads the state of gensyn from a JSON object.
+"        loadState : function(state) {\n"
+"            throw new Error('Havent implemented this yet');\n"
+"        },\n"
+        // returns the default output object that will receive the waveform
+"        getOutput : function() {\n"
+"            return this.gate.get('output');\n"
+"        },\n"
+"        help : function() {\n"
+"            return __gensyn_c_native('help');\n"
+"        }\n"
+"    }\n"
+"})();\n";
 
 
 
@@ -116,12 +179,12 @@ gensyn_t * gensyn_create() {
     //gensyn_table_insert(out->fnCmd, GENSYN_STR_CAST("error"),          gensyn_command__error);
     gensyn_table_insert(out->fnCmd, GENSYN_STR_CAST("gate-list"),      gensyn_command__gate_list);
     gensyn_table_insert(out->fnCmd, GENSYN_STR_CAST("gate-check"),     gensyn_command__gate_check);
-    gensyn_table_insert(out->fnCmd, GENSYN_STR_CAST("gate_add"),       gensyn_command__gate_add);
-    gensyn_table_insert(out->fnCmd, GENSYN_STR_CAST("gate_summary"),   gensyn_command__gate_summary);
-    gensyn_table_insert(out->fnCmd, GENSYN_STR_CAST("gate_connect"),   gensyn_command__gate_connect);
-    gensyn_table_insert(out->fnCmd, GENSYN_STR_CAST("gate_disconnect"),gensyn_command__gate_disconnect);
-    gensyn_table_insert(out->fnCmd, GENSYN_STR_CAST("gate_get_param"), gensyn_command__gate_get_param);
-    gensyn_table_insert(out->fnCmd, GENSYN_STR_CAST("gate_set_param"), gensyn_command__gate_set_param);
+    gensyn_table_insert(out->fnCmd, GENSYN_STR_CAST("gate-add"),       gensyn_command__gate_add);
+    gensyn_table_insert(out->fnCmd, GENSYN_STR_CAST("gate-summary"),   gensyn_command__gate_summary);
+    gensyn_table_insert(out->fnCmd, GENSYN_STR_CAST("gate-connect"),   gensyn_command__gate_connect);
+    gensyn_table_insert(out->fnCmd, GENSYN_STR_CAST("gate-disconnect"),gensyn_command__gate_disconnect);
+    gensyn_table_insert(out->fnCmd, GENSYN_STR_CAST("gate-get_param"), gensyn_command__gate_get_param);
+    gensyn_table_insert(out->fnCmd, GENSYN_STR_CAST("gate-set_param"), gensyn_command__gate_set_param);
 
     
     
@@ -139,17 +202,24 @@ gensyn_t * gensyn_create() {
     
     out->output = gensyn_create_named_gate(
         out, 
-        GENSYN_STR_CAST("GenSyn Output"), 
+        GENSYN_STR_CAST("GenSyn_Output"), 
         GENSYN_STR_CAST("output")
     );
+    
+    
+    const gensyn_string_t * in = gensyn_send_command(out, GENSYN_STR_CAST(initialjs));
+    if (gensyn_string_get_length(in)) {
+        printf("%s\n", gensyn_string_get_c_str(in));
+    }
+    
     
     return out;
 }
 
 
 // Gets the main output gate.
-gensyn_t * gensyn_get_output_gate(const gensyn_t * g) {
-    return (gensyn_t *)g->output;
+gensyn_gate_t * gensyn_get_output_gate(const gensyn_t * g) {
+    return (gensyn_gate_t *)g->output;
 }
 
 
@@ -225,6 +295,8 @@ int gensyn_get_framebuffer_texture(gensyn_t * g) {
 
 void register_gate_types() {
     gensyn_gate_add__gensyn_output();
+    gensyn_gate_add__sine_wave();
+    gensyn_gate_add__simple_input();
     
 }
 
@@ -237,7 +309,7 @@ static duk_ret_t gensyn_ecma_c_native(duk_context * ctx) {
     const gensyn_string_t * args[n];
     
     for(i = 0; i < n; ++i) {
-        args[n] = GENSYN_STR_CAST(duk_to_string(ctx, i));
+        args[i] = GENSYN_STR_CAST(duk_to_string(ctx, i));
     }
     
     gensyn_string_t * out = gensyn_string_create();
@@ -389,10 +461,10 @@ static void gensyn_command__gate_summary(
     gensyn_string_concat_printf(
         output, 
         
-        "ID:     %s\n",
-        "Class:  %s\n",
-        "Type:   %s\n",
-        "Description:\n\n%s\n",
+        "ID:     %s\n"
+        "Class:  %s\n"
+        "Type:   %s\n\n"
+        "Description:\n\%s\n",
         
         
         gensyn_string_get_c_str(args[0]),
@@ -402,7 +474,7 @@ static void gensyn_command__gate_summary(
     );
 
     
-    gensyn_string_concat_printf(output, "Inputs:\n");
+    gensyn_string_concat_printf(output, "\nInputs:\n");
     int i;
     const gensyn_array_t * names = gensyn_gate_get_in_names(g);
     for(i = 0; i < gensyn_array_get_size(names); ++i) {
@@ -413,9 +485,10 @@ static void gensyn_command__gate_summary(
                 gensyn_string_t *,
                 i
             )
-        );
+        ); 
 
         
+        gensyn_string_concat_printf(output, "   - ");
         gensyn_string_concat(
             output,
             gensyn_array_at(
@@ -424,7 +497,7 @@ static void gensyn_command__gate_summary(
                 i
             )
         );
-        if (g)
+        if (from)
             gensyn_string_concat_printf(output, " -> Connected\n");
         else 
             gensyn_string_concat_printf(output, "\n");
@@ -440,7 +513,7 @@ static void gensyn_command__gate_summary(
     for(i = 0; i < gensyn_array_get_size(names); ++i) {
         const gensyn_string_t * name = gensyn_array_at(names, gensyn_string_t *, i);
         float val = gensyn_gate_get_parameter(g, name);
-        gensyn_string_concat_printf(output, "%s : %f\n", gensyn_string_get_c_str(name), val);
+        gensyn_string_concat_printf(output, "   - %s : %f\n", gensyn_string_get_c_str(name), val);
     }
 
     

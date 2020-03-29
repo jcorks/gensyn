@@ -15,7 +15,7 @@ gensyn_t * gensyn_create();
 
 
 // Gets the main output gate.
-gensyn_t * gensyn_get_output_gate(const gensyn_t *);
+gensyn_gate_t * gensyn_get_output_gate(const gensyn_t *);
 
 
 

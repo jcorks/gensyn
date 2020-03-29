@@ -326,7 +326,7 @@ const gensyn_string_t * gensyn_string_temporary_from_c_str(const char * s) {
         tempInit = 1;
     }    
 
-    if (tempIter >= gensyn_string_temp_max_calls) tempIter = gensyn_string_temp_max_calls;
+    if (tempIter >= gensyn_string_temp_max_calls) tempIter = 0;
     gensyn_string_t * t = tempVals[tempIter++];
     gensyn_string_set_cstr(t, s, strlen(s));
     return t;

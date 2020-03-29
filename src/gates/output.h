@@ -13,12 +13,13 @@ static int gensyn_output__on_update(
     uint32_t            sampleCount,
     float               sampleRate
 ) {
-    if (!nIn) {
+    if (!inSampleBuffers[0]) {
         // missing input! nothing to write to device...
+        printf("No input. Nothing to do!\n");
         return 0;
     }
 
-    printf("output @ %d samples, %.2f Hz", sampleCount, sampleRate);
+    printf("output @ %d samples, %.2f Hz\n", sampleCount, sampleRate);
     memcpy(buffer, inSampleBuffers[0], sizeof(gensyn_sample_t)*sampleCount);
     return 1;
 }
@@ -30,7 +31,7 @@ static void gensyn_output__on_remove(gensyn_gate_t * g) {
 
 void gensyn_gate_add__gensyn_output() {
     gensyn_gate_register(
-        GENSYN_STR_CAST("GenSyn Output"),
+        GENSYN_STR_CAST("GenSyn_Output"),
         GENSYN_STR_CAST("Acts as the symbolic receiver of the waveform. The recevied waveform is then passed to the device to be output as raw audio. As such, this is the endpoint for the synth."),
 
         1,
