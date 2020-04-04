@@ -1,8 +1,8 @@
 
 
 
-static void simple_input__on_create(gensyn_gate_t * g) {
-    
+static void * simple_input__on_create(gensyn_gate_t * g) {
+    return NULL;
 }
 
 static int simple_input__on_update(
@@ -11,7 +11,8 @@ static int simple_input__on_update(
     gensyn_sample_t **  inSampleBuffers, 
     gensyn_sample_t *   buffer,
     uint32_t            sampleCount,
-    float               sampleRate
+    float               sampleRate,
+    void *              userData
 ) {
     float val = gensyn_gate_get_parameter(gate, GENSYN_STR_CAST("value"));
     uint32_t i;
@@ -21,7 +22,7 @@ static int simple_input__on_update(
     return 1;
 }
 
-static void simple_input__on_remove(gensyn_gate_t * g) {
+static void simple_input__on_remove(gensyn_gate_t * g, void * data) {
     
 }
 

@@ -1,8 +1,15 @@
 
 
 
-static void sine_wave__on_create(gensyn_gate_t * g) {
-    
+
+typedef struct {
+    float lastFreq;
+    float lastSample;
+    uint64_t sampleTrack;    
+} sine_wave__data_t;
+
+static void * sine_wave__on_create(gensyn_gate_t * g) {
+    return calloc(1, sizeof(sine_wave__data_t));
 }
 
 static int sine_wave__on_update(
@@ -11,7 +18,8 @@ static int sine_wave__on_update(
     gensyn_sample_t **  inSampleBuffers, 
     gensyn_sample_t *   buffer,
     uint32_t            sampleCount,
-    float               sampleRate
+    float               sampleRate,
+    void *              dataSrc
 ) {
 
     gensyn_sample_t * pitch = inSampleBuffers[0];
@@ -19,11 +27,12 @@ static int sine_wave__on_update(
     gensyn_sample_t * velocity = inSampleBuffers[2];
     
     uint32_t i;
-    uint64_t sampleOffset = gensyn_gate_get_sample_tick(gate);
+    sine_wave__data_t * src = dataSrc;
     
     printf("@ %f\n", gensyn_pitch_sample_to_hz(pitch[0]));
     
     if (pitch && phase){
+        /*
         for(i = 0; i < sampleCount; ++i) {
             buffer[i] = sin(
                 2 * M_PI * (// rads -> 1.0 per cycle
@@ -36,23 +45,29 @@ static int sine_wave__on_update(
                 )
                 
             )*.5 + .5;
-        }
+        }*/
     } else if (pitch) {
         for(i = 0; i < sampleCount; ++i) {
-            buffer[i] = sin(
+            buffer[i] = sin( 
                 2 * M_PI * (// rads -> 1.0 per cycle
                     
-                    (gensyn_pitch_sample_to_hz(pitch[i])) * // 1.0 cycle -> number of cycles per second,
+                    (src->lastFreq) * // 1.0 cycle -> number of cycles per second,
                     
-                    ((i+sampleOffset) / sampleRate)  // progress of the cycle
+                    ((src->sampleTrack) / sampleRate)  // progress of the cycle
                 )
-                
-            )*.5 + .5;
-        }
-        
-        
+            );
+            
+            // we only want to allow frequency shifts when we are not midway through a cycle
+            if (src->lastSample <= 0 && buffer[i] >= 0) {
+                src->sampleTrack = 0;
+                src->lastFreq = (gensyn_pitch_sample_to_hz(pitch[i]));
+            }
+            src->sampleTrack++;
+            src->lastSample = buffer[i];
+        }         
     } else 
         return 0;
+    
     
     if (velocity) {
         for(i = 0; i < sampleCount; ++i) {
@@ -62,8 +77,8 @@ static int sine_wave__on_update(
     return 1;
 }
 
-static void sine_wave__on_remove(gensyn_gate_t * g) {
-    
+static void sine_wave__on_remove(gensyn_gate_t * g, void * data) {
+    free(data);
 }
 
 

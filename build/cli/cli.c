@@ -20,7 +20,7 @@
 
 #define SAMPLERATE    44100
 #define BUFFERSIZE    256
-#define DURATION_SEC  3
+#define DURATION_SEC  10
 
 
 
@@ -32,7 +32,6 @@ static void write_output_pcm(gensyn_t * g, const char * output) {
     }
     
     float    * buffer     = calloc(BUFFERSIZE, sizeof(float));
-    int16_t  * bufferReal = calloc(BUFFERSIZE, sizeof(int16_t));
 
     uint32_t i, n;
     for(i = 0; i < SAMPLERATE * DURATION_SEC; i+=BUFFERSIZE) {
@@ -43,17 +42,11 @@ static void write_output_pcm(gensyn_t * g, const char * output) {
             SAMPLERATE
         );
         
-        for(n = 0; n < BUFFERSIZE; ++n) {
-            bufferReal[n] = (buffer[n] * (INT16_MAX - INT16_MIN)) + INT16_MIN;
-        }
-        fwrite(bufferReal, BUFFERSIZE, sizeof(int16_t), f);
-        
+        fwrite(buffer, BUFFERSIZE, sizeof(float), f);        
     }
     free(buffer);
-    free(bufferReal);
-
     fclose(f);
-    printf("Wrote waveform to %s\n", output);
+    printf("Wrote waveform (32bit float [-1, 1])to %s\n", output);
 }
 
 
@@ -80,8 +73,8 @@ int main() {
             "   var osc   = gensyn.gate.add('Simple_LFO', 'TestLFO');\n"
             "   var adder = gensyn.gate.add('Adder', 'TestAdder');\n"
             
-            "   input.setParam('value', .05372362482610995);\n"
-            "   osc.setParam('max', 0.001);\n"
+            "   input.setParam('value', -0.8925527503477801);\n"
+            "   osc.setParam('max', 0.01);\n"
             "   osc.setParam('hz', 4);\n"
             
             "   osc.connectTo('input0', adder);\n"
@@ -89,7 +82,7 @@ int main() {
 
             "   adder.connectTo('pitch', wave);\n"
             "   wave.connectTo('waveform', gensyn.getOutput());\n"
-            "}"
+            "}; testSynth();\n"
 
             
             

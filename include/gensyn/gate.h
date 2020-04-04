@@ -28,7 +28,8 @@ typedef struct gensyn_gate_t gensyn_gate_t;
 
 // Called when the gate is created. This 
 // is done on the same thread as the update and remove functions.
-typedef void (*gensyn_gate__create_fn)(gensyn_gate_t *);
+// userdata is returned.
+typedef void * (*gensyn_gate__create_fn)(gensyn_gate_t *);
 
 // Called when the gate is updated. This 
 // is done on the same thread as the create and remove functions.
@@ -59,12 +60,15 @@ typedef int (*gensyn_gate__update_fn)(
     uint32_t sampleCount,
 
     // The sample rate in Hz.
-    float sampleRate
+    float sampleRate,
+    
+    // User-generated data.
+    void * userData
 );
 
 // Called when the gate is updated. This 
 // is done on the same thread as the create and remove functions.
-typedef void (*gensyn_gate__remove_fn)(gensyn_gate_t *);
+typedef void (*gensyn_gate__remove_fn)(gensyn_gate_t *, void * userData);
 
 
 

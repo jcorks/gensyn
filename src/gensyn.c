@@ -40,7 +40,7 @@ static gensyn_table_t * ecmaToInstance = NULL;
 static void register_gate_types();
 
 
-
+ 
 const char * initialjs = 
 "gensyn = (function() {\n"
 "    return {\n"

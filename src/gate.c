@@ -36,7 +36,7 @@ struct gensyn_gate_t {
     gensyn_array_t * paramnamesArr;
 
     gensyn_string_t * desc;
-
+    void * data;
 
     gensyn_sample_t * sampleBuffer;
     uint32_t sampleBufferSize;
@@ -163,14 +163,14 @@ gensyn_gate_t * gensyn_gate_create(gensyn_t * ctx, const gensyn_string_t * str) 
 
     gensyn_gate_t * out = gensyn_gate_clone(prefab);
     out->context = ctx;
-    out->onCreate(out);
+    out->data = out->onCreate(out);
     return out;
 }
 
 
 void gensyn_gate_destroy(gensyn_gate_t * g) {
     int i, n;
-    g->onRemove(g);
+    g->onRemove(g, g->data);
 
     for(i = 0; i < g->nins; ++i) {
         if (g->inrefs[i]) {
@@ -244,7 +244,8 @@ void gensyn_gate_run__internal(
         inBuffers,
         g->sampleBuffer,
         sampleCount,
-        sampleRate
+        sampleRate,
+        g->data
     );
     g->sampleTick += sampleCount;
 }

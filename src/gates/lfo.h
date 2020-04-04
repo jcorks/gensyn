@@ -1,8 +1,8 @@
 
 
 
-static void lfo__on_create(gensyn_gate_t * g) {
-    
+static void * lfo__on_create(gensyn_gate_t * g) {
+    return NULL;
 }
 
 static int lfo__on_update(
@@ -11,7 +11,8 @@ static int lfo__on_update(
     gensyn_sample_t **  inSampleBuffers, 
     gensyn_sample_t *   buffer,
     uint32_t            sampleCount,
-    float               sampleRate
+    float               sampleRate,
+    void *              userData
 ) {
     float hz  = gensyn_gate_get_parameter(gate, GENSYN_STR_CAST("hz"));
     float max = gensyn_gate_get_parameter(gate, GENSYN_STR_CAST("max"));
@@ -23,12 +24,12 @@ static int lfo__on_update(
     uint16_t sampleTick = gensyn_gate_get_sample_tick(gate);
     
     for(i = 0; i < sampleCount; ++i) {
-        buffer[i] = (sin(M_PI * 2 * ((i+sampleTick) / sampleRate)*hz)*.5+.5)*max;
+        buffer[i] = (sin(M_PI * 2 * ((i+sampleTick) / sampleRate)*hz))*max;
     }
     return 1;
 }
 
-static void lfo__on_remove(gensyn_gate_t * g) {
+static void lfo__on_remove(gensyn_gate_t * g, void * data) {
     
 }
 

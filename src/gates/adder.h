@@ -1,8 +1,8 @@
 
 
 
-static void adder__on_create(gensyn_gate_t * g) {
-    
+static void * adder__on_create(gensyn_gate_t * g) {
+    return NULL;
 }
 
 static int adder__on_update(
@@ -11,7 +11,8 @@ static int adder__on_update(
     gensyn_sample_t **  inSampleBuffers, 
     gensyn_sample_t *   buffer,
     uint32_t            sampleCount,
-    float               sampleRate
+    float               sampleRate,
+    void *              userData
 ) {
 
     uint32_t i, n;
@@ -29,10 +30,12 @@ static int adder__on_update(
         for(n = 0; n < inReal; ++n) {
             buffer[i] += ins[n][i];
         }
+        if (fabs(buffer[i]) > highest)
+            highest = fabs(buffer[i]);
     }
     
     // normalize
-    if (highest > 0) {
+    if (highest > 0 && (gensyn_gate_get_parameter(gate, GENSYN_STR_CAST("normalize")) > .5)) {
         for(i = 0; i < sampleCount; ++i) {
             buffer[i] /= highest;            
         }
@@ -40,7 +43,7 @@ static int adder__on_update(
     return 1;
 }
 
-static void adder__on_remove(gensyn_gate_t * g) {
+static void adder__on_remove(gensyn_gate_t * g, void * data) {
     
 }
 
@@ -65,7 +68,8 @@ void gensyn_gate_add__adder() {
         GENSYN_GATE__PROPERTY__CONNECTION,  GENSYN_STR_CAST("input6"),
         GENSYN_GATE__PROPERTY__CONNECTION,  GENSYN_STR_CAST("input7"),
 
-
+        // whether to normalize the gate
+        GENSYN_GATE__PROPERTY__PARAM,   GENSYN_STR_CAST("normalize"), 0.0,
                          
         GENSYN_GATE__PROPERTY__END
     );

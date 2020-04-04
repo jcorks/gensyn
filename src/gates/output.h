@@ -1,8 +1,8 @@
 
 
 
-static void gensyn_output__on_create(gensyn_gate_t * g) {
-    
+static void * gensyn_output__on_create(gensyn_gate_t * g) {
+    return NULL;
 }
 
 static int gensyn_output__on_update(
@@ -11,7 +11,8 @@ static int gensyn_output__on_update(
     gensyn_sample_t **  inSampleBuffers, 
     gensyn_sample_t *   buffer,
     uint32_t            sampleCount,
-    float               sampleRate
+    float               sampleRate,
+    void *              userData
 ) {
     if (!inSampleBuffers[0]) {
         // missing input! nothing to write to device...
@@ -24,7 +25,7 @@ static int gensyn_output__on_update(
     return 1;
 }
 
-static void gensyn_output__on_remove(gensyn_gate_t * g) {
+static void gensyn_output__on_remove(gensyn_gate_t * g, void * userData) {
     
 }
 
