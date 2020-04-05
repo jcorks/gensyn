@@ -35,8 +35,8 @@ static void write_output_pcm(gensyn_t * g, const char * output) {
 
     uint32_t i, n;
     for(i = 0; i < SAMPLERATE * DURATION_SEC; i+=BUFFERSIZE) {
-        gensyn_gate_run(
-            gensyn_get_output_gate(g),
+        gensyn_generate_waveform(
+            g,
             buffer,
             BUFFERSIZE,
             SAMPLERATE
@@ -73,9 +73,9 @@ int main() {
             "   var osc   = gensyn.gate.add('Simple_LFO', 'TestLFO');\n"
             "   var adder = gensyn.gate.add('Adder', 'TestAdder');\n"
             
-            "   input.setParam('value', -0.8925527503477801);\n"
-            "   osc.setParam('max', 0.01);\n"
-            "   osc.setParam('hz', 4);\n"
+            "   input.setParam('value', gensyn.noteToPitch['A4']);\n"
+            "   osc.setParam('max', 0.004);\n"
+            "   osc.setParam('hz', 6);\n"
             
             "   osc.connectTo('input0', adder);\n"
             "   input.connectTo('input1', adder);\n"

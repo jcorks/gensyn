@@ -26,6 +26,7 @@ struct gensyn_gate_t {
     int texture;
     int x;
     int y;
+    int isActive;
     float params[MAX_PARAM];
 
     gensyn_gate_t * inrefs [MAX_CX];
@@ -247,6 +248,7 @@ void gensyn_gate_run__internal(
         sampleRate,
         g->data
     );
+    g->isActive = 1;
     g->sampleTick += sampleCount;
 }
 
@@ -268,6 +270,16 @@ void gensyn_gate_run(
     memcpy(samplesOut, g->sampleBuffer, sampleCount*sizeof(gensyn_sample_t));
 }
 
+// Returns whether the gate was used last output cycle
+int gensyn_gate_get_is_active(const gensyn_gate_t * g) {
+    return g->isActive; 
+}
+
+// Resets the active flag for the gate. Normally, this is 
+// run and controlled for you.
+void gensyn_gate_reset_is_active(gensyn_gate_t * g) {
+    g->isActive = 0;
+}
 
 
 

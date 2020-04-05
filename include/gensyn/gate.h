@@ -177,6 +177,13 @@ uint64_t gensyn_gate_get_sample_tick(const gensyn_gate_t *);
 
 
 
+// Returns whether the gate was used last output cycle
+int gensyn_gate_get_is_active(const gensyn_gate_t *);
+
+// Resets the active flag for the gate. Normally, this is 
+// run and controlled for you.
+void gensyn_gate_reset_is_active(gensyn_gate_t *);
+
 
 
 // Returns a string description for the gate.

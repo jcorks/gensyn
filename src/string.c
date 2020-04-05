@@ -128,6 +128,8 @@ void gensyn_string_set(gensyn_string_t * s, const gensyn_string_t * src) {
 
     if (s->delimiters) gensyn_string_destroy(s->delimiters);
     if (s->chain) gensyn_string_destroy(s->chain);
+    s->delimiters = NULL;
+    s->chain = NULL;
 
 }
 
