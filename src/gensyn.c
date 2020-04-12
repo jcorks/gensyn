@@ -408,6 +408,15 @@ gensyn_t * gensyn_create() {
     return out;
 }
 
+void gensyn_start_audio(gensyn_t * g) {
+    gensyn_system_setup_audio(
+        g->sys,
+        gensyn_generate_waveform,
+        g
+    );
+}
+
+
 
 // Gets the main output gate.
 gensyn_gate_t * gensyn_get_output_gate(const gensyn_t * g) {

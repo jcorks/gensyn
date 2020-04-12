@@ -1,5 +1,5 @@
 CC:= gcc
-OPTS:=  -g -I./include/
+OPTS:= -fsanitize=address -fsanitize=undefined -g -I./include/
 LINK:= -lm -lasound -lpthread
 
 

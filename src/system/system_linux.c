@@ -25,15 +25,23 @@ typedef struct gensyn_linux_input_t gensyn_linux_input_t;
 static gensyn_linux_input_t * gensyn_linux_input_create();
 
 
+// Handles sound-related functions. Implemented below.
+typedef struct gensyn_linux_sound_t gensyn_linux_sound_t;
+// Creates a sound instance
+static gensyn_linux_sound_t * gensyn_linux_sound_create();
+
+
 
 struct gensyn_system_t {
     gensyn_linux_input_t * input;    
+    gensyn_linux_sound_t * sound;
 };
 
 
 gensyn_system_t * gensyn_system_create() {
     gensyn_system_t * out = malloc(sizeof(gensyn_system_t));
     out->input = gensyn_linux_input_create();
+    out->sound = gensyn_linux_sound_create();
     return out;
 }
 
@@ -369,6 +377,102 @@ void gensyn_system_thread_cancel(gensyn_system_t * s, uint8_t id) {
     assert(!"sorry not yet");
     
 }
+
+
+
+
+
+
+
+
+
+
+
+
+////////////SOUND          ///////////////
+////////////IMPLEMENTATION //////////////
+struct gensyn_linux_sound_t {
+    void (*fn)(void * userData, gensyn_sample_t *, uint32_t, float);
+    void * userData;
+};
+
+
+gensyn_linux_sound_t * gensyn_linux_sound_create() {
+    return calloc(1, sizeof(gensyn_linux_sound_t));
+}
+
+
+static void * gensyn_alsa_thread_main(void * src) {
+    gensyn_system_t * s = src;
+    snd_pcm_t * handle;
+    assert(snd_pcm_open(
+        &handle,
+        "default",
+        SND_PCM_STREAM_PLAYBACK,
+        0
+    )>=0);
+    
+    // set blocking so we can natural use flow control
+    snd_pcm_nonblock(handle, 0);
+    
+    assert(snd_pcm_set_params(
+        handle,
+        SND_PCM_FORMAT_FLOAT_LE,
+        SND_PCM_ACCESS_RW_INTERLEAVED,
+        1,
+        44100,
+        1,
+        20000
+    )>=0);
+    
+    int sampleCount = 256;
+    float buffer[256];
+    
+    while(1) {
+        s->sound->fn(
+            s->sound->userData,
+            buffer,
+            256,
+            44100
+        );
+        snd_pcm_writei(
+            handle, buffer, 256
+        );
+        
+    }
+    
+    
+    
+}
+
+
+void gensyn_system_setup_audio(
+    gensyn_system_t * s,
+    void (*fn)(void * userData, gensyn_sample_t * samples, uint32_t numSamples, float sampleRate),
+    void * userData
+) {
+    if (!s->sound->fn) {
+        s->sound->fn = fn;
+        s->sound->userData = userData;
+        
+        gensyn_system_thread_create(
+            s,
+            gensyn_alsa_thread_main,
+            s
+        );
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -130,8 +130,9 @@ void gensyn_system_update_screen(gensyn_system_t *);
 // the stream will continuously call the stream callback
 // as the audio device needs.
 void gensyn_system_setup_audio(
-    gensyn_t *,
-    void (*)(gensyn_t *, gensyn_sample_t * samples, uint32_t numSamples, float sampleRate)
+    gensyn_system_t *,
+    void (*)(void * userData, gensyn_sample_t * samples, uint32_t numSamples, float sampleRate),
+    void * userData
 );
 
 

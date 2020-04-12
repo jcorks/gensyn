@@ -19,6 +19,10 @@ typedef struct gensyn_t gensyn_t;
 gensyn_t * gensyn_create();
 
 
+// starts audio output to the default device.
+void gensyn_start_audio(gensyn_t *);
+
+
 // Gets the main output gate.
 gensyn_gate_t * gensyn_get_output_gate(const gensyn_t *);
 
