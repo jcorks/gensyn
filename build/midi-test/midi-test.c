@@ -11,7 +11,8 @@ int main() {
     gensyn_t * g = gensyn_create();
     gensyn_system_t * env = gensyn_get_system(g);
     
-    
+    /*
+    /*
     // query the devices. THe querying processes 
     // also updates which devices gensyn will listen from.
     int numDev = gensyn_system_input_query_devices(env);
@@ -59,5 +60,8 @@ int main() {
                 );
             }
         }
+    }*/
+    while(1) {
+        sleep(1);
     }
 }

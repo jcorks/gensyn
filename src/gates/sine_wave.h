@@ -91,7 +91,8 @@ void gensyn_gate_add__sine_wave() {
         sine_wave__on_create,
         sine_wave__on_update,
         sine_wave__on_remove,
-        
+        NULL,
+
         
         GENSYN_GATE__PROPERTY__CONNECTION, GENSYN_STR_CAST("pitch"),
         GENSYN_GATE__PROPERTY__CONNECTION, GENSYN_STR_CAST("velocity"),

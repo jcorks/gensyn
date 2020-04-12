@@ -52,6 +52,8 @@ void gensyn_gate_add__glider() {
         glider__on_create,
         glider__on_update,
         glider__on_remove,
+        NULL,
+
         
         GENSYN_GATE__PROPERTY__CONNECTION, GENSYN_STR_CAST("input"),
         

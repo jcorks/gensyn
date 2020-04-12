@@ -1,6 +1,6 @@
 CC:= gcc
-OPTS:= -fsanitize=address -fsanitize=undefined -g -I./include/
-LINK:= -lm -lasound
+OPTS:=  -g -I./include/
+LINK:= -lm -lasound -lpthread
 
 
 
@@ -11,6 +11,7 @@ OBJS_CORE:= \
 	src/gensyn.o \
 	src/string.o \
 	src/table.o \
+	src/ring.o \
 	src/extern/srgs.o \
 	src/extern/duktape.o \
 	src/system/system_linux.o

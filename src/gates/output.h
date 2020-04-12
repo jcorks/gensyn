@@ -39,7 +39,8 @@ void gensyn_gate_add__gensyn_output() {
         gensyn_output__on_create,
         gensyn_output__on_update,
         gensyn_output__on_remove,
-        
+        NULL,
+
         
         GENSYN_GATE__PROPERTY__CONNECTION, GENSYN_STR_CAST("waveform"),
         GENSYN_GATE__PROPERTY__END

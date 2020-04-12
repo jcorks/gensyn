@@ -4,6 +4,7 @@
 #include <gensyn/sample.h>
 #include <gensyn/string.h>
 #include <gensyn/array.h>
+#include <gensyn/system.h>
 typedef struct gensyn_t gensyn_t;
 /*
     GenSyn: Gate 
@@ -70,7 +71,13 @@ typedef int (*gensyn_gate__update_fn)(
 // is done on the same thread as the create and remove functions.
 typedef void (*gensyn_gate__remove_fn)(gensyn_gate_t *, void * userData);
 
-
+// Called when the system receives a new input event. 
+// This is called on its own thread.
+typedef void (*gensyn_gate__input_fn)(
+    gensyn_gate_t *, 
+    const gensyn_system__input_event_t * event, 
+    void * userData
+);
 
 
 
@@ -136,7 +143,7 @@ int gensyn_gate_register(
     gensyn_gate__create_fn      onCreate,
     gensyn_gate__update_fn      onUpdate,
     gensyn_gate__remove_fn      onRemove,
-
+    gensyn_gate__input_fn       onInput,
     
     ...
 );
@@ -257,6 +264,11 @@ gensyn_gate__type_e gensyn_gate_get_type(const gensyn_gate_t *);
 // returns the class of gate
 const gensyn_string_t * gensyn_gate_get_class(const gensyn_gate_t *);
 
+// Returns whether this gate reacts to input
+int gensyn_gate_reads_input(const gensyn_gate_t *);
+
+// Returns the input function for this gate
+void gensyn_gate_send_event(gensyn_gate_t *, const gensyn_system__input_event_t * event);
 
 
 #endif

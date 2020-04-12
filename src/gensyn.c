@@ -3,7 +3,7 @@
 #include <gensyn/table.h>
 #include <gensyn/sample.h>
 #include <gensyn/system.h>
-
+#include <gensyn/ring.h>
 #include "extern/duktape.h"
 #include "extern/srgs.h"
 
@@ -35,10 +35,20 @@ struct gensyn_t {
     gensyn_string_t * result;
     
     gensyn_table_iter_t * tableIter;
+    
+    
+    // gates sent to the input thread
+    gensyn_ring_t * commandAdd;
+    gensyn_ring_t * commandRemove;
+    
+    // all gates that accept 
+    gensyn_array_t * inputGates;
 };
 
 static gensyn_table_t * ecmaToInstance = NULL;
 
+// Starts the input loop for the system.
+void gensyn_start_input_loop(gensyn_t * t);
 
 
 // Registers all built-in gate types.
@@ -388,6 +398,13 @@ gensyn_t * gensyn_create() {
     }
     
     out->sys = gensyn_system_create();
+    
+    
+    out->commandAdd    = gensyn_ring_create(sizeof(gensyn_gate_t*), 1024);
+    out->commandRemove = gensyn_ring_create(sizeof(gensyn_gate_t*), 1024);
+    out->inputGates    = gensyn_array_create(sizeof(gensyn_gate_t*));
+    
+    gensyn_start_input_loop(out);
     return out;
 }
 
@@ -831,6 +848,97 @@ static void gensyn_command__gate_set_param(
 }
 
 
+
+
+
+
+///// input loop stuff
+
+static void gensyn_input_loop_thread__process_event(
+    gensyn_t * g,
+    const gensyn_system__input_event_t * event 
+) {
+    
+    printf("EVENT: %d %d %d %d\n",
+        event->deviceID,
+        event->input,
+        event->inputData1,
+        event->inputData2
+    );
+    uint32_t i;
+    for(i = 0; i < gensyn_array_get_size(g->inputGates); ++i) {
+        gensyn_gate_send_event(
+            gensyn_array_at(g->inputGates, gensyn_gate_t *, i),
+            event
+        );
+    }
+}
+
+
+static void * gensyn_input_loop_thread__main(void * gSrc) {
+    #define MAX_EVENTS_PER_ITER 128
+    #define ITER_WAIT_TIME_MS   1
+    gensyn_system__input_event_t events[MAX_EVENTS_PER_ITER];
+    
+
+
+    
+    
+    gensyn_t * g = gSrc;
+    gensyn_system_t * sys = gensyn_get_system(g);
+    
+    time_t timeNow = 0;
+    uint32_t count;
+    for(;;) {
+        // remove all old gates
+        while (gensyn_ring_has_pending(g->commandRemove)) {
+            gensyn_gate_t * gate = gensyn_ring_pop(g->commandRemove, gensyn_gate_t *);
+            uint32_t i;
+            for(i = 0; i < gensyn_array_get_size(g->inputGates); ++i) {
+                if (gate == gensyn_array_at(g->inputGates, gensyn_gate_t *, i)) {
+                    gensyn_array_remove(g->inputGates, i);
+                    break;
+                }
+            }
+        }
+        
+        // get all new gates 
+        while (gensyn_ring_has_pending(g->commandAdd)) {
+            gensyn_gate_t * gate = gensyn_ring_pop(g->commandAdd, gensyn_gate_t *);
+            gensyn_array_push(g->inputGates, gate);
+        }
+
+        
+        
+
+        // priodically check the device state
+        if (timeNow != time(NULL)) {
+            gensyn_system_input_query_devices(sys);
+            timeNow = time(NULL);
+        }
+        
+        gensyn_system_input_update(sys);
+
+        while(gensyn_system_input_get_events( 
+            sys,
+            events,
+            MAX_EVENTS_PER_ITER,
+            &count)) {
+            
+            uint32_t i;
+            for(i = 0; i < count; ++i) {
+                gensyn_input_loop_thread__process_event(g, events+i);
+            }            
+        }
+        
+        gensyn_system_usleep(1000);
+    }
+}
+
+
+void gensyn_start_input_loop(gensyn_t * t) {
+    gensyn_system_thread_create(t->sys, gensyn_input_loop_thread__main, t);
+}
 
 
 

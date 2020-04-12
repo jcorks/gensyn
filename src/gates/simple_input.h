@@ -36,7 +36,8 @@ void gensyn_gate_add__simple_input() {
         simple_input__on_create,
         simple_input__on_update,
         simple_input__on_remove,
-        
+        NULL,
+
         
         GENSYN_GATE__PROPERTY__PARAM, GENSYN_STR_CAST("value"), .5,
         GENSYN_GATE__PROPERTY__END

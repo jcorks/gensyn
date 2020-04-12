@@ -57,7 +57,7 @@ void gensyn_gate_add__adder() {
         adder__on_create,
         adder__on_update,
         adder__on_remove,
-        
+        NULL,
         
         GENSYN_GATE__PROPERTY__CONNECTION,  GENSYN_STR_CAST("input0"),
         GENSYN_GATE__PROPERTY__CONNECTION,  GENSYN_STR_CAST("input1"),

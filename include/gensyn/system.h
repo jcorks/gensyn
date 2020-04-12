@@ -135,9 +135,15 @@ void gensyn_system_setup_audio(
 );
 
 
+/////////////////
+///////////////// UTILITY
+/////////////////
 
+void gensyn_system_usleep(uint32_t);
 
+uint8_t gensyn_system_thread_create(gensyn_system_t *, void * (*)(void *), void *);
 
+void gensyn_system_thread_cancel(gensyn_system_t *, uint8_t);
 
 
 

@@ -10,7 +10,7 @@
 #include <stdlib.h>
 
 #include <alsa/asoundlib.h>
-
+#include <pthread.h>
 
 // Runs the give program with the given arguments.
 // standard out for that 
@@ -347,7 +347,28 @@ void gensyn_system_input_send_event(gensyn_system_t * g, const gensyn_system__in
 
 
 
+void gensyn_system_usleep(uint32_t u) {
+    usleep(u);
+}
 
+
+static pthread_t threadPool[0xff] = {0};
+uint8_t threadPoolID = 0;
+
+uint8_t gensyn_system_thread_create(gensyn_system_t * g, void * (*threadMain)(void *), void * userData) {
+    pthread_create(
+        threadPool+threadPoolID,
+        NULL,
+        threadMain,
+        userData
+    );
+    return threadPoolID++;
+}
+
+void gensyn_system_thread_cancel(gensyn_system_t * s, uint8_t id) {
+    assert(!"sorry not yet");
+    
+}
 
 
 

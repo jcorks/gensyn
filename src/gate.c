@@ -19,6 +19,7 @@ struct gensyn_gate_t {
     gensyn_gate__create_fn onCreate;
     gensyn_gate__update_fn onUpdate;
     gensyn_gate__remove_fn onRemove;
+    gensyn_gate__input_fn  onInput;
 
     int nins;
     int nouts;    
@@ -63,6 +64,7 @@ int gensyn_gate_register(
     gensyn_gate__create_fn      onCreate,
     gensyn_gate__update_fn      onUpdate,
     gensyn_gate__remove_fn      onRemove,
+    gensyn_gate__input_fn       onInput,
     
     ...
 ) {
@@ -77,13 +79,14 @@ int gensyn_gate_register(
     }
 
     va_list args;
-    va_start(args, onRemove);
+    va_start(args, onInput);
 
     gensyn_gate_t * g = calloc(1, sizeof(gensyn_gate_t));
 
     g->onCreate = onCreate;
     g->onUpdate = onUpdate;
     g->onRemove = onRemove;
+    g->onInput  = onInput;
     g->desc = gensyn_string_clone(desc);
     g->texture = texID;
     g->type = gensyn_string_clone(name);
@@ -431,6 +434,15 @@ void gensyn_gate_set_x(gensyn_gate_t * g, int x) {
 }
 void gensyn_gate_set_y(gensyn_gate_t * g, int y) {
     g->y = y;
+}
+
+int gensyn_gate_reads_input(const gensyn_gate_t * g) {
+    return g->onInput != NULL;
+}
+
+void gensyn_gate_send_event(gensyn_gate_t * g, const gensyn_system__input_event_t * event) {
+    if (!g->onInput) return;
+    g->onInput(g, event, g->data);
 }
 
 

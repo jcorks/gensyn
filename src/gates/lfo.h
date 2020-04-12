@@ -43,7 +43,8 @@ void gensyn_gate_add__lfo() {
         lfo__on_create,
         lfo__on_update,
         lfo__on_remove,
-        
+        NULL,
+
         
         GENSYN_GATE__PROPERTY__PARAM, GENSYN_STR_CAST("hz"),   .5,
         GENSYN_GATE__PROPERTY__PARAM, GENSYN_STR_CAST("max"), 1.0,
